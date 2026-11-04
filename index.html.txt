@@ -1,0 +1,1827 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Curriculum Activity & Attendance Portal - Marwadi University</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- QR Code Generator Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- HTML5 QR Code Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glass-header { background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(12px); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        
+        @keyframes scan {
+            0% { top: 5%; opacity: 0.8; }
+            50% { top: 90%; opacity: 1; }
+            100% { top: 5%; opacity: 0.8; }
+        }
+        .scan-line {
+            animation: scan 2.2s ease-in-out infinite;
+        }
+
+        .face-box {
+            border: 2px dashed #10b981;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .face-box.matched {
+            border: 3px solid #10b981;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.8);
+            background: rgba(16, 185, 129, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+
+    <!-- ==================== 1. LOGIN & AUTH SCREEN ==================== -->
+    <div id="loginScreen" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl my-auto">
+            
+            <!-- Branding Panel -->
+            <div class="bg-gradient-to-br from-indigo-950 via-slate-950 to-slate-950 p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-800 relative overflow-hidden">
+                <div class="absolute -right-12 -bottom-12 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div>
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="bg-gradient-to-tr from-indigo-600 to-indigo-400 p-3 rounded-2xl text-white shadow-lg shadow-indigo-500/30">
+                            <i class="fa-solid fa-graduation-cap text-2xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-extrabold text-white tracking-wide">Marwadi University</h1>
+                            <p class="text-xs text-indigo-400 font-medium">ICT Department • Div 3EK1</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <span class="inline-block px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 rounded-full text-xs font-semibold">
+                            Python 01CT1309 Project Submission
+                        </span>
+                        <h2 class="text-2xl font-bold text-white leading-tight">Smart Curriculum, Activity & Attendance Portal</h2>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Centralized system for live face biometric matching, dynamic 30-second student-specific QR codes, SGPA/CGPA transcripts, timetable tracking, and automated defaulter notifications.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-800/80 text-[11px] text-slate-500 space-y-1">
+                    <p class="font-semibold text-slate-400">Project Group 3EK1:</p>
+                    <p class="text-indigo-300 font-medium">1. M. Madhu Mohan Kumar (92500133046)</p>
+                    <p>2. M. Govardhan Reddy (92500133047)</p>
+                    <p>3. M. Shivanag (92500133026) | 4. K. Preetham (92500133034)</p>
+                </div>
+            </div>
+
+            <!-- Login Form Panel -->
+            <div class="p-8 flex flex-col justify-center bg-slate-900">
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold text-white">System Access Portal</h3>
+                    <p class="text-xs text-slate-400 mt-1">Select account type or use one-click access presets</p>
+                </div>
+
+                <!-- Role Tabs -->
+                <div class="grid grid-cols-3 gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 mb-6">
+                    <button id="loginTabStudent" onclick="selectLoginRole('student')" class="py-2 text-xs font-semibold rounded-xl transition-all text-white bg-indigo-600 shadow-md">
+                        <i class="fa-solid fa-user-graduate mr-1"></i> Student
+                    </button>
+                    <button id="loginTabFaculty" onclick="selectLoginRole('faculty')" class="py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white transition-all">
+                        <i class="fa-solid fa-chalkboard-user mr-1"></i> Faculty
+                    </button>
+                    <button id="loginTabAdmin" onclick="selectLoginRole('admin')" class="py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white transition-all">
+                        <i class="fa-solid fa-user-shield mr-1"></i> Admin
+                    </button>
+                </div>
+
+                <!-- Login Form -->
+                <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1" id="loginIdLabel">Enrollment Number / User ID</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 text-xs">
+                                <i class="fa-solid fa-id-card"></i>
+                            </span>
+                            <input type="text" id="loginIdInput" required class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition-colors" placeholder="e.g. 92500133046">
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-medium text-slate-300">Password</label>
+                            <button type="button" onclick="openForgotPasswordModal()" class="text-[11px] text-indigo-400 hover:underline">Forgot password?</button>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 text-xs">
+                                <i class="fa-solid fa-lock"></i>
+                            </span>
+                            <input type="password" id="loginPasswordInput" value="stu123" required class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-10 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                            <button type="button" onclick="togglePasswordVisibility('loginPasswordInput', this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-slate-300">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-3 rounded-xl transition-all flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/30 active:scale-95">
+                        <span>Authenticate & Enter</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </form>
+
+                <!-- Quick Access Presets -->
+                <div class="mt-6 pt-5 border-t border-slate-800">
+                    <p class="text-[11px] font-semibold text-slate-400 mb-2">⚡ Quick Access Credentials:</p>
+                    <div class="grid grid-cols-1 gap-2 text-xs">
+                        <button onclick="quickLogin('student')" class="text-left px-3 py-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 flex items-center justify-between transition-colors">
+                            <span class="font-medium"><i class="fa-solid fa-user text-indigo-400 mr-2"></i>Student: M. Madhu Mohan</span>
+                            <span class="text-[10px] text-slate-500 font-mono">92500133046</span>
+                        </button>
+                        <button onclick="quickLogin('faculty')" class="text-left px-3 py-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 flex items-center justify-between transition-colors">
+                            <span class="font-medium"><i class="fa-solid fa-chalkboard text-emerald-400 mr-2"></i>Faculty: Prof. R. K. Sharma</span>
+                            <span class="text-[10px] text-slate-500 font-mono">FAC-102</span>
+                        </button>
+                        <button onclick="quickLogin('admin')" class="text-left px-3 py-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 flex items-center justify-between transition-colors">
+                            <span class="font-medium"><i class="fa-solid fa-shield-halved text-amber-400 mr-2"></i>Admin: Class Coordinator</span>
+                            <span class="text-[10px] text-slate-500 font-mono">ADMIN-01</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ==================== 2. MAIN APPLICATION INTERFACE ==================== -->
+    <div id="appContainer" class="hidden flex-1 flex flex-col min-h-screen">
+        
+        <!-- HEADER TOOLBAR -->
+        <header class="glass-header border-b border-slate-800 sticky top-0 z-40 px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-indigo-600 to-indigo-400 p-2.5 rounded-xl text-white font-bold flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-graduation-cap text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-base sm:text-lg leading-tight tracking-wide text-white">Marwadi University ICT</h1>
+                    <p class="text-[11px] text-indigo-400 font-medium flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Smart Attendance & Activity System
+                    </p>
+                </div>
+            </div>
+
+            <!-- Profile Badge & Controls -->
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <div class="bg-slate-800/90 border border-slate-700/80 rounded-xl px-3 py-1.5 flex items-center space-x-2">
+                    <img id="headerUserAvatar" src="" class="w-6 h-6 rounded-full object-cover border border-indigo-400">
+                    <div class="text-left hidden sm:block">
+                        <p id="headerUserName" class="text-xs font-bold text-white leading-tight"></p>
+                        <p id="headerUserRole" class="text-[10px] text-indigo-300 capitalize"></p>
+                    </div>
+                </div>
+
+                <button onclick="openAddUserModal()" id="btnHeaderEnroll" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-all flex items-center space-x-1.5 shadow-md shadow-indigo-600/30">
+                    <i class="fa-solid fa-camera text-xs"></i>
+                    <span class="hidden sm:inline">Camera Enrollment</span>
+                </button>
+
+                <button onclick="handleLogout()" class="bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/30 text-rose-300 text-xs font-semibold px-3 py-2 rounded-xl transition-all flex items-center space-x-1">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span class="hidden sm:inline">Logout</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN LAYOUT WRAPPER -->
+        <div class="flex-1 flex overflow-hidden">
+
+            <!-- SIDEBAR NAVIGATION -->
+            <aside class="w-64 bg-slate-950 border-r border-slate-800 flex flex-col justify-between hidden md:flex shrink-0">
+                <div class="p-4 space-y-5">
+                    <!-- Sidebar User Status Card -->
+                    <div id="sidebarUserBadge" class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center space-x-3 shadow-inner">
+                        <!-- Populated dynamically -->
+                    </div>
+
+                    <!-- Navigation Items -->
+                    <nav class="space-y-1.5" id="sidebarNav">
+                        <!-- Populated dynamically -->
+                    </nav>
+                </div>
+
+                <!-- Footer System Info -->
+                <div class="p-4 border-t border-slate-800 text-[11px] text-slate-500 space-y-1 bg-slate-950/50">
+                    <p class="font-semibold text-slate-400">Marwadi Univ • ICT Div 3EK1</p>
+                    <p>Subject: Python 01CT1309</p>
+                    <p class="text-[10px] text-indigo-400/90 truncate">Student Leader: M. Madhu Mohan (46)</p>
+                </div>
+            </aside>
+
+            <!-- MAIN WORKSPACE CONTENT -->
+            <main class="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-slate-900" id="mainContent">
+                <!-- Dynamically populated based on tab & role -->
+            </main>
+        </div>
+    </div>
+
+    <!-- ==================== 3. MODALS & FORMS ==================== -->
+
+    <!-- FORGOT PASSWORD MODAL -->
+    <div id="forgotPasswordModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 relative shadow-2xl space-y-4">
+            <button onclick="closeForgotPasswordModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 bg-indigo-500/10 text-indigo-400 rounded-xl border border-indigo-500/20">
+                    <i class="fa-solid fa-key text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Reset Password</h3>
+                    <p class="text-xs text-slate-400">Send reset verification to your university email</p>
+                </div>
+            </div>
+
+            <!-- Email Request Step -->
+            <form id="forgotPassForm" onsubmit="handleSendResetLink(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Registered University Email</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 text-xs">
+                            <i class="fa-solid fa-envelope"></i>
+                        </span>
+                        <input type="email" id="forgotEmailInput" placeholder="username@marwadi.edu" required class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2.5 rounded-xl transition-all shadow-md shadow-indigo-600/30">
+                    Send Password Reset Magic Link
+                </button>
+            </form>
+
+            <!-- Reset Verification Step -->
+            <div id="resetLinkSimulatedStep" class="hidden space-y-4 pt-2 border-t border-slate-800">
+                <div class="bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-xl text-emerald-300 text-xs space-y-1">
+                    <p class="font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-paper-plane text-emerald-400"></i> Reset Token Verified!
+                    </p>
+                    <p class="text-[11px] text-emerald-400/90">University identity confirmed. Specify your new login password below:</p>
+                </div>
+
+                <form onsubmit="handleSetNewPassword(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">New Password</label>
+                        <input type="password" id="newPasswordInput" required minlength="4" placeholder="Enter new password" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-2.5 rounded-xl transition-all shadow">
+                        Save & Update Password
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN ENROLLMENT & WEBCAM FACE PHOTO CAPTURE MODAL -->
+    <div id="addUserModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-xl p-6 relative shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <button onclick="closeAddUserModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
+                    <i class="fa-solid fa-user-plus text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Enroll Student / Faculty (Live Camera Access)</h3>
+                    <p class="text-xs text-slate-400">Provision credentials, email, and baseline face biometrics</p>
+                </div>
+            </div>
+
+            <form onsubmit="handleAddUserSubmit(event)" class="space-y-3 text-xs">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 mb-1 font-medium">Role</label>
+                        <select id="newUserRole" onchange="generateSuggestedId()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+                            <option value="student">Student</option>
+                            <option value="faculty">Faculty</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 mb-1 font-medium">ID / Roll No</label>
+                        <input type="text" id="newUserId" required placeholder="e.g. 92500133048" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 mb-1 font-medium">Full Name</label>
+                    <input type="text" id="newUserName" required placeholder="Full Name" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 mb-1 font-medium">University Email</label>
+                        <input type="email" id="newUserEmail" required placeholder="username@marwadi.edu" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 mb-1 font-medium">Division / Dept</label>
+                        <input type="text" id="newUserDept" value="Div 3EK1" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-slate-300 font-medium">Initial Password</label>
+                        <button type="button" onclick="autoGeneratePassword()" class="text-[10px] text-indigo-400 hover:underline">Auto-generate</button>
+                    </div>
+                    <input type="text" id="newUserPassword" required placeholder="Initial password" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono">
+                </div>
+
+                <!-- LIVE WEBCAM CAPTURE FOR BIOMETRIC BASELINE -->
+                <div class="pt-2 border-t border-slate-800 space-y-2">
+                    <label class="block text-slate-300 font-medium">Student Baseline Face Photo Registration</label>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Camera Stream Box -->
+                        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col items-center justify-center space-y-2">
+                            <video id="enrollWebcam" autoplay playsinline class="w-full h-28 object-cover rounded-lg bg-slate-900 border border-slate-800 hidden"></video>
+                            <div id="enrollCameraPlaceholder" class="w-full h-28 bg-slate-900 rounded-lg flex flex-col items-center justify-center text-slate-500">
+                                <i class="fa-solid fa-video-slash text-xl mb-1"></i>
+                                <span class="text-[10px]">Camera Standby</span>
+                            </div>
+
+                            <div class="flex space-x-2 w-full">
+                                <button type="button" onclick="startAdminEnrollCamera()" class="flex-1 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-semibold">
+                                    <i class="fa-solid fa-camera mr-1"></i> Start Cam
+                                </button>
+                                <button type="button" onclick="captureAdminEnrollPhoto()" class="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-semibold">
+                                    <i class="fa-solid fa-circle-dot mr-1"></i> Snap Photo
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Preview Box -->
+                        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col items-center justify-center text-center space-y-2">
+                            <img id="adminPhotoPreview" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80" class="w-20 h-20 object-cover rounded-full border-2 border-indigo-500 shadow">
+                            <p class="text-[10px] text-slate-400">Captured / Selected Photo</p>
+                            <label class="cursor-pointer text-[10px] text-indigo-400 hover:underline">
+                                Or select file...
+                                <input type="file" accept="image/*" onchange="previewAdminPhotoFile(event)" class="hidden">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="closeAddUserModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold flex items-center gap-1 shadow">
+                        <i class="fa-solid fa-user-check"></i> Register Account & Save Biometrics
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notifications Toast -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- Hidden Snapshot Canvas -->
+    <canvas id="hiddenSnapshotCanvas" class="hidden"></canvas>
+
+    <!-- ==================== 4. APPLICATION LOGIC ENGINE ==================== -->
+    <script>
+        // MASTER CENTRAL STATE
+        const appState = {
+            currentUser: null,
+            activeLoginRole: 'student',
+            activeTab: 'dashboard',
+            resetEmailTarget: null,
+            adminCameraStream: null,
+            capturedAdminPhotoUrl: null,
+
+            // Pre-populated Users Roster
+            users: [
+                { id: 'ADMIN-01', name: 'Class Coordinator (HOD)', role: 'admin', email: 'admin.ict@marwadi.edu', password: 'admin123', dept: 'Marwadi ICT Admin', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80' },
+                { id: 'FAC-102', name: 'Prof. R. K. Sharma', role: 'faculty', email: 'prof.sharma@marwadi.edu', password: 'fac123', dept: 'ICT Dept', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80' },
+                { id: '92500133046', name: 'M. Madhu Mohan Kumar', role: 'student', email: 'madhu.kumar925@marwadi.edu', password: 'stu123', div: '3EK1', attendance: 88, sgpa: 8.92, cgpa: 8.75, backlogs: 0, enrolledPhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80', status: 'Present', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80' },
+                { id: '92500133047', name: 'M. Govardhan Reddy', role: 'student', email: 'govardhan.reddy@marwadi.edu', password: 'stu123', div: '3EK1', attendance: 72, sgpa: 7.40, cgpa: 7.20, backlogs: 1, enrolledPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80', status: 'Absent', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80' },
+                { id: '92500133026', name: 'M. Shivanag', role: 'student', email: 'shivanag.m@marwadi.edu', password: 'stu123', div: '3EK1', attendance: 65, sgpa: 6.80, cgpa: 6.95, backlogs: 2, enrolledPhoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80', status: 'Absent', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80' },
+                { id: '92500133034', name: 'K. Preetham', role: 'student', email: 'preetham.k@marwadi.edu', password: 'stu123', div: '3EK1', attendance: 91, sgpa: 9.15, cgpa: 9.05, backlogs: 0, enrolledPhoto: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&auto=format&fit=crop&q=80', status: 'Present', avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&auto=format&fit=crop&q=80' }
+            ],
+
+            timetable: [
+                { day: 'Monday', time: '09:00 - 10:00 AM', subject: 'Python 01CT1309', faculty: 'Prof. R. K. Sharma', room: 'Lab 302' },
+                { day: 'Monday', time: '10:15 - 11:15 AM', subject: 'Data Structures & Alg', faculty: 'Dr. Mehta', room: 'Room 104' },
+                { day: 'Tuesday', time: '11:30 - 12:30 PM', subject: 'Web Frameworks Lab', faculty: 'Prof. Patel', room: 'Lab 201' },
+                { day: 'Wednesday', time: '02:00 - 04:00 PM', subject: 'Python Live Project', faculty: 'Prof. R. K. Sharma', room: 'AI Lab' },
+                { day: 'Thursday', time: '09:00 - 10:00 AM', subject: 'Database Systems', faculty: 'Dr. Joshi', room: 'Room 205' },
+                { day: 'Friday', time: '10:15 - 11:15 AM', subject: 'Operating Systems', faculty: 'Prof. Verma', room: 'Room 104' }
+            ],
+
+            assignments: [
+                { id: 1, title: 'OpenCV Live Face Recognition Engine', subject: 'Python 01CT1309', dueDate: '2026-11-10', status: 'Pending', file: null },
+                { id: 2, title: 'Flask Role-Based Authentication System', subject: 'Web Frameworks', dueDate: '2026-11-05', status: 'Submitted', file: 'auth_module.py' }
+            ],
+
+            holidays: [
+                { title: 'Diwali Festival Vacation', date: '2026-11-12 to 2026-11-16', type: 'University Holiday' },
+                { title: 'Republic Day Celebration', date: '2026-01-26', type: 'National Holiday' }
+            ],
+
+            events: [
+                { title: 'Marwadi Tech Fest 2026', date: '2026-11-20', room: 'Main Auditorium' },
+                { title: 'Python Mid-Term Practical Exam', date: '2026-11-25', room: 'ICT Labs' }
+            ],
+
+            curriculum: [
+                { id: 1, topic: 'Unit 1: Python Basics & Data Types', subject: 'Python 01CT1309', completed: true, date: '2026-08-15' },
+                { id: 2, topic: 'Unit 2: Modular Programming & Functions', subject: 'Python 01CT1309', completed: true, date: '2026-09-02' },
+                { id: 3, topic: 'Unit 3: Object-Oriented Design & OpenCV', subject: 'Python 01CT1309', completed: true, date: '2026-09-20' },
+                { id: 4, topic: 'Unit 4: Web Frameworks (Flask / FastAPI)', subject: 'Python 01CT1309', completed: false, date: 'Pending' },
+                { id: 5, topic: 'Unit 5: Attendance Algorithms & DB Systems', subject: 'Python 01CT1309', completed: false, date: 'Pending' }
+            ],
+
+            activities: [
+                { id: 101, studentId: '92500133046', studentName: 'M. Madhu Mohan Kumar', title: 'Hackathon Presentation on Biometrics', category: 'Academic', date: '2026-09-10', status: 'Approved' },
+                { id: 102, studentId: '92500133047', studentName: 'M. Govardhan Reddy', title: 'Tech Symposium Organizing Lead', category: 'Co-Curricular', date: '2026-09-18', status: 'Approved' },
+                { id: 103, studentId: '92500133026', studentName: 'M. Shivanag', title: 'Python Module Workshop', category: 'Academic', date: '2026-09-24', status: 'Pending' }
+            ],
+
+            // Active Live Session State
+            liveSession: {
+                activeMode: 'all',
+                selectedStudentId: '92500133046',
+                token: '',
+                timer: 30,
+                intervalId: null,
+                webcamStream: null,
+                lastMarkedStudent: null
+            }
+        };
+
+        window.onload = function() {
+            selectLoginRole('student');
+        };
+
+        // --- PASSWORD REVEAL ---
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if(input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye';
+            }
+        }
+
+        // --- AUTH & LOGIN ---
+        function selectLoginRole(role) {
+            appState.activeLoginRole = role;
+            const tabStudent = document.getElementById('loginTabStudent');
+            const tabFaculty = document.getElementById('loginTabFaculty');
+            const tabAdmin = document.getElementById('loginTabAdmin');
+            const label = document.getElementById('loginIdLabel');
+            const inputId = document.getElementById('loginIdInput');
+            const inputPass = document.getElementById('loginPasswordInput');
+
+            [tabStudent, tabFaculty, tabAdmin].forEach(btn => {
+                btn.className = 'py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white transition-all';
+            });
+
+            if(role === 'student') {
+                tabStudent.className = 'py-2 text-xs font-semibold rounded-xl text-white bg-indigo-600 shadow-md';
+                label.innerText = 'Student Enrollment Number';
+                inputId.value = '92500133046';
+                inputPass.value = 'stu123';
+            } else if(role === 'faculty') {
+                tabFaculty.className = 'py-2 text-xs font-semibold rounded-xl text-white bg-indigo-600 shadow-md';
+                label.innerText = 'Faculty ID';
+                inputId.value = 'FAC-102';
+                inputPass.value = 'fac123';
+            } else if(role === 'admin') {
+                tabAdmin.className = 'py-2 text-xs font-semibold rounded-xl text-white bg-indigo-600 shadow-md';
+                label.innerText = 'Admin / Coordinator ID';
+                inputId.value = 'ADMIN-01';
+                inputPass.value = 'admin123';
+            }
+        }
+
+        function quickLogin(role) {
+            selectLoginRole(role);
+            const userId = document.getElementById('loginIdInput').value;
+            const user = appState.users.find(u => u.id === userId && u.role === role);
+            if(user) loginUser(user);
+        }
+
+        function handleLoginSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('loginIdInput').value.trim();
+            const pass = document.getElementById('loginPasswordInput').value.trim();
+            const role = appState.activeLoginRole;
+
+            const user = appState.users.find(u => u.id === id && u.role === role);
+            if(!user) {
+                showToast(`Invalid ${role.toUpperCase()} ID or account non-existent`, 'error');
+                return;
+            }
+
+            if(user.password !== pass) {
+                showToast(`Incorrect Password! Use 'Forgot password?' to reset.`, 'error');
+                return;
+            }
+
+            loginUser(user);
+        }
+
+        function loginUser(userObj) {
+            appState.currentUser = userObj;
+            appState.activeTab = 'dashboard';
+
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+
+            document.getElementById('headerUserName').innerText = userObj.name;
+            document.getElementById('headerUserRole').innerText = userObj.role;
+            document.getElementById('headerUserAvatar').src = userObj.avatar;
+
+            const btnEnroll = document.getElementById('btnHeaderEnroll');
+            if(userObj.role === 'admin') {
+                btnEnroll.classList.remove('hidden');
+            } else {
+                btnEnroll.classList.add('hidden');
+            }
+
+            renderSidebar();
+            renderMainContent();
+            showToast(`Welcome back, ${userObj.name}!`, 'success');
+        }
+
+        function handleLogout() {
+            stopLiveSession();
+            stopAdminEnrollCamera();
+            appState.currentUser = null;
+            document.getElementById('appContainer').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            showToast('Logged out successfully', 'info');
+        }
+
+        // --- FORGOT PASSWORD FLOW ---
+        function openForgotPasswordModal() {
+            document.getElementById('forgotEmailInput').value = '';
+            document.getElementById('resetLinkSimulatedStep').classList.add('hidden');
+            document.getElementById('forgotPasswordModal').classList.remove('hidden');
+        }
+
+        function closeForgotPasswordModal() {
+            document.getElementById('forgotPasswordModal').classList.add('hidden');
+        }
+
+        function handleSendResetLink(e) {
+            e.preventDefault();
+            const email = document.getElementById('forgotEmailInput').value.trim();
+            const user = appState.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+            if(!user) {
+                showToast('Email not registered in Marwadi University system!', 'error');
+                return;
+            }
+
+            appState.resetEmailTarget = user;
+            document.getElementById('resetLinkSimulatedStep').classList.remove('hidden');
+            showToast(`Password reset link sent to ${email}`, 'success');
+        }
+
+        function handleSetNewPassword(e) {
+            e.preventDefault();
+            const newPass = document.getElementById('newPasswordInput').value.trim();
+            if(appState.resetEmailTarget && newPass) {
+                appState.resetEmailTarget.password = newPass;
+                showToast(`Password updated! Use your new password to log in.`, 'success');
+                closeForgotPasswordModal();
+                document.getElementById('loginPasswordInput').value = newPass;
+            }
+        }
+
+        // --- WEBCAM ENROLLMENT FOR ADMIN ---
+        function openAddUserModal() {
+            generateSuggestedId();
+            document.getElementById('addUserModal').classList.remove('hidden');
+        }
+
+        function closeAddUserModal() {
+            stopAdminEnrollCamera();
+            document.getElementById('addUserModal').classList.add('hidden');
+        }
+
+        function startAdminEnrollCamera() {
+            const video = document.getElementById('enrollWebcam');
+            const placeholder = document.getElementById('enrollCameraPlaceholder');
+            if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(stream => {
+                        appState.adminCameraStream = stream;
+                        video.srcObject = stream;
+                        video.classList.remove('hidden');
+                        placeholder.classList.add('hidden');
+                        showToast('Live camera feed active', 'info');
+                    })
+                    .catch(err => {
+                        showToast('Unable to access webcam. Choose photo file instead.', 'error');
+                    });
+            }
+        }
+
+        function stopAdminEnrollCamera() {
+            if(appState.adminCameraStream) {
+                appState.adminCameraStream.getTracks().forEach(t => t.stop());
+                appState.adminCameraStream = null;
+            }
+            const video = document.getElementById('enrollWebcam');
+            const placeholder = document.getElementById('enrollCameraPlaceholder');
+            if(video) video.classList.add('hidden');
+            if(placeholder) placeholder.classList.remove('hidden');
+        }
+
+        function captureAdminEnrollPhoto() {
+            const video = document.getElementById('enrollWebcam');
+            if(!appState.adminCameraStream || video.classList.contains('hidden')) {
+                showToast('Start camera stream first!', 'error');
+                return;
+            }
+            const canvas = document.getElementById('hiddenSnapshotCanvas');
+            canvas.width = video.videoWidth || 300;
+            canvas.height = video.videoHeight || 300;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            appState.capturedAdminPhotoUrl = canvas.toDataURL('image/jpeg');
+            document.getElementById('adminPhotoPreview').src = appState.capturedAdminPhotoUrl;
+            showToast('Student face photo registered!', 'success');
+        }
+
+        function previewAdminPhotoFile(e) {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    appState.capturedAdminPhotoUrl = evt.target.result;
+                    document.getElementById('adminPhotoPreview').src = evt.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function generateSuggestedId() {
+            const role = document.getElementById('newUserRole').value;
+            const idInput = document.getElementById('newUserId');
+            if(role === 'student') {
+                idInput.value = `925001330${Math.floor(10 + Math.random() * 90)}`;
+            } else {
+                idInput.value = `FAC-${Math.floor(100 + Math.random() * 900)}`;
+            }
+            autoGeneratePassword();
+        }
+
+        function autoGeneratePassword() {
+            const pass = 'pass' + Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('newUserPassword').value = pass;
+        }
+
+        function handleAddUserSubmit(e) {
+            e.preventDefault();
+            const role = document.getElementById('newUserRole').value;
+            const id = document.getElementById('newUserId').value.trim();
+            const name = document.getElementById('newUserName').value.trim();
+            const email = document.getElementById('newUserEmail').value.trim();
+            const dept = document.getElementById('newUserDept').value.trim();
+            const pass = document.getElementById('newUserPassword').value.trim();
+
+            if(appState.users.some(u => u.id === id)) {
+                showToast('User ID / Roll No already registered!', 'error');
+                return;
+            }
+
+            const photoUrl = appState.capturedAdminPhotoUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80';
+
+            const newUser = {
+                id: id,
+                name: name,
+                role: role,
+                email: email,
+                password: pass,
+                dept: role === 'student' ? undefined : dept,
+                div: role === 'student' ? dept : undefined,
+                attendance: role === 'student' ? 100 : undefined,
+                sgpa: role === 'student' ? 8.00 : undefined,
+                cgpa: role === 'student' ? 8.00 : undefined,
+                backlogs: role === 'student' ? 0 : undefined,
+                status: role === 'student' ? 'Present' : undefined,
+                enrolledPhoto: photoUrl,
+                avatar: photoUrl
+            };
+
+            appState.users.push(newUser);
+            closeAddUserModal();
+            showToast(`Enrolled ${name} with password '${pass}'`, 'success');
+            
+            if(appState.activeTab === 'users') {
+                renderAdminUsersModule(document.getElementById('mainContent'));
+            }
+        }
+
+        function deleteUser(userId) {
+            if(userId === 'ADMIN-01') {
+                showToast('Cannot delete default Root Admin account!', 'error');
+                return;
+            }
+            appState.users = appState.users.filter(u => u.id !== userId);
+            renderAdminUsersModule(document.getElementById('mainContent'));
+            showToast('User account deleted', 'info');
+        }
+
+        // --- SIDEBAR & NAV ---
+        function renderSidebar() {
+            const role = appState.currentUser.role;
+            const badge = document.getElementById('sidebarUserBadge');
+            const nav = document.getElementById('sidebarNav');
+
+            badge.innerHTML = `
+                <img src="${appState.currentUser.avatar}" class="w-10 h-10 rounded-full object-cover border border-indigo-500 shadow">
+                <div class="overflow-hidden">
+                    <h4 class="text-xs font-bold text-white truncate">${appState.currentUser.name}</h4>
+                    <p class="text-[10px] text-indigo-400 uppercase tracking-wider font-semibold">${role} Account</p>
+                </div>
+            `;
+
+            let navItems = [];
+            if(role === 'student') {
+                navItems = [
+                    { id: 'dashboard', label: 'Student Dashboard', icon: 'fa-gauge' },
+                    { id: 'scanQr', label: 'Scan Faculty QR', icon: 'fa-qrcode' },
+                    { id: 'timetable', label: 'Timetable & Schedule', icon: 'fa-calendar-days' },
+                    { id: 'assignments', label: 'Assignments Hub', icon: 'fa-file-code' },
+                    { id: 'results', label: 'Results & Transcript', icon: 'fa-graduation-cap' },
+                    { id: 'curriculum', label: 'Curriculum Progress', icon: 'fa-book-open' },
+                    { id: 'holidays', label: 'Holidays & Events', icon: 'fa-calendar-check' }
+                ];
+            } else if(role === 'faculty') {
+                navItems = [
+                    { id: 'dashboard', label: 'Faculty Overview', icon: 'fa-chart-pie' },
+                    { id: 'liveAttendance', label: 'Live Attendance Engine', icon: 'fa-video' },
+                    { id: 'academicMgmt', label: 'Grade & Result Entry', icon: 'fa-pen-to-square' },
+                    { id: 'curriculum', label: 'Manage Curriculum', icon: 'fa-list-check' },
+                    { id: 'activities', label: 'Review Student Logs', icon: 'fa-tasks' }
+                ];
+            } else if(role === 'admin') {
+                navItems = [
+                    { id: 'dashboard', label: 'System Analytics', icon: 'fa-chart-line' },
+                    { id: 'users', label: 'User Directory & Keys', icon: 'fa-users-gear' },
+                    { id: 'alerts', label: 'Defaulter Alerts (<75%)', icon: 'fa-triangle-exclamation' },
+                    { id: 'curriculum', label: 'Master Curriculum', icon: 'fa-book' },
+                    { id: 'activities', label: 'Activity Logs', icon: 'fa-award' }
+                ];
+            }
+
+            nav.innerHTML = navItems.map(item => `
+                <button onclick="switchTab('${item.id}')" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-colors ${appState.activeTab === item.id ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-900'}">
+                    <i class="fa-solid ${item.icon} text-sm w-5"></i>
+                    <span>${item.label}</span>
+                </button>
+            `).join('');
+        }
+
+        function switchTab(tabId) {
+            if(appState.activeTab === 'liveAttendance' && tabId !== 'liveAttendance') {
+                stopLiveSession();
+            }
+            appState.activeTab = tabId;
+            renderSidebar();
+            renderMainContent();
+        }
+
+        // --- DISPATCHER ---
+        function renderMainContent() {
+            const main = document.getElementById('mainContent');
+            const role = appState.currentUser.role;
+            const tab = appState.activeTab;
+
+            if(tab === 'dashboard') {
+                if(role === 'student') renderStudentDashboard(main);
+                else if(role === 'faculty') renderFacultyDashboard(main);
+                else if(role === 'admin') renderAdminDashboard(main);
+            } else if(tab === 'scanQr') {
+                renderStudentQRScanner(main);
+            } else if(tab === 'liveAttendance') {
+                renderFacultyLiveSession(main);
+            } else if(tab === 'timetable') {
+                renderTimetableModule(main);
+            } else if(tab === 'assignments') {
+                renderAssignmentsModule(main);
+            } else if(tab === 'results') {
+                renderStudentResultsModule(main);
+            } else if(tab === 'academicMgmt') {
+                renderFacultyAcademicMgmtModule(main);
+            } else if(tab === 'holidays') {
+                renderHolidaysEventsModule(main);
+            } else if(tab === 'curriculum') {
+                renderCurriculumModule(main);
+            } else if(tab === 'activities') {
+                renderActivitiesModule(main);
+            } else if(tab === 'alerts') {
+                renderAdminAlertsModule(main);
+            } else if(tab === 'users') {
+                renderAdminUsersModule(main);
+            }
+        }
+
+        // ==================== VIEWS & MODULE RENDERERS ====================
+
+        // STUDENT DASHBOARD
+        function renderStudentDashboard(container) {
+            const student = appState.currentUser;
+            const lowAttendance = student.attendance < 75;
+
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div class="bg-gradient-to-r from-indigo-950/60 via-slate-900 to-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <span class="text-xs font-semibold text-indigo-400 uppercase tracking-wide">Student Portal • Div ${student.div || '3EK1'}</span>
+                            <h2 class="text-xl font-bold text-white mt-1">Hello, ${student.name}</h2>
+                            <p class="text-xs text-slate-400 mt-1">Email: <span class="text-indigo-300 font-mono">${student.email}</span> | Roll: <span class="text-slate-200 font-mono">${student.id}</span></p>
+                        </div>
+                        <button onclick="switchTab('scanQr')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all shadow-md shadow-indigo-600/30 flex items-center space-x-2">
+                            <i class="fa-solid fa-qrcode"></i>
+                            <span>Scan Live Faculty QR</span>
+                        </button>
+                    </div>
+
+                    ${lowAttendance ? `
+                        <div class="bg-rose-950/40 border border-rose-800/80 p-4 rounded-2xl flex items-center justify-between text-rose-300 text-xs">
+                            <div class="flex items-center space-x-3">
+                                <i class="fa-solid fa-triangle-exclamation text-lg text-rose-400 animate-bounce"></i>
+                                <div>
+                                    <p class="font-bold">LOW ATTENDANCE ALERT (< 75%)</p>
+                                    <p class="text-[11px] text-rose-400">Your current overall attendance is ${student.attendance}%. Attend upcoming lectures to prevent exam disqualification.</p>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                        <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-2">
+                            <div class="flex justify-between items-center text-slate-400 text-xs">
+                                <span>Overall Attendance</span>
+                                <i class="fa-solid fa-user-check text-emerald-400"></i>
+                            </div>
+                            <div class="text-2xl font-bold ${student.attendance >= 75 ? 'text-emerald-400' : 'text-rose-400'}">${student.attendance}%</div>
+                            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                                <div class="${student.attendance >= 75 ? 'bg-emerald-500' : 'bg-rose-500'} h-full" style="width: ${student.attendance}%"></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-2">
+                            <div class="flex justify-between items-center text-slate-400 text-xs">
+                                <span>Academic SGPA</span>
+                                <i class="fa-solid fa-graduation-cap text-indigo-400"></i>
+                            </div>
+                            <div class="text-2xl font-bold text-white">${student.sgpa || '8.92'}</div>
+                            <p class="text-[10px] text-slate-400">CGPA: <strong class="text-indigo-300">${student.cgpa || '8.75'}</strong></p>
+                        </div>
+
+                        <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-2">
+                            <div class="flex justify-between items-center text-slate-400 text-xs">
+                                <span>Active Backlogs</span>
+                                <i class="fa-solid fa-circle-exclamation text-amber-400"></i>
+                            </div>
+                            <div class="text-2xl font-bold ${student.backlogs > 0 ? 'text-amber-400' : 'text-emerald-400'}">${student.backlogs || 0}</div>
+                            <p class="text-[10px] text-slate-400">${student.backlogs > 0 ? 'Remedial required' : 'All Clear ✓'}</p>
+                        </div>
+
+                        <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-2">
+                            <div class="flex justify-between items-center text-slate-400 text-xs">
+                                <span>Coursework Due</span>
+                                <i class="fa-solid fa-file-code text-indigo-400"></i>
+                            </div>
+                            <div class="text-2xl font-bold text-white">1 Pending</div>
+                            <p class="text-[10px] text-slate-400">View Assignments Hub</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // FACULTY DASHBOARD
+        function renderFacultyDashboard(container) {
+            const students = appState.users.filter(u => u.role === 'student');
+
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div class="bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <span class="text-xs font-semibold text-emerald-400 uppercase tracking-wide">Faculty Portal</span>
+                            <h2 class="text-xl font-bold text-white mt-1">${appState.currentUser.name}</h2>
+                            <p class="text-xs text-slate-400 mt-1">Email: <span class="text-emerald-300 font-mono">${appState.currentUser.email}</span> | ICT Dept</p>
+                        </div>
+                        <button onclick="switchTab('liveAttendance')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-600/30 flex items-center space-x-2">
+                            <i class="fa-solid fa-play"></i>
+                            <span>Start Live Attendance Session</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden p-5">
+                        <h3 class="text-sm font-bold text-white mb-4">Class Roster & Academic Status</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                                        <th class="py-2.5 px-3">Student Name</th>
+                                        <th class="py-2.5 px-3">Email</th>
+                                        <th class="py-2.5 px-3">SGPA / CGPA</th>
+                                        <th class="py-2.5 px-3">Attendance %</th>
+                                        <th class="py-2.5 px-3">Live Session Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800/60">
+                                    ${students.map(s => `
+                                        <tr>
+                                            <td class="py-3 px-3 font-semibold text-white flex items-center space-x-2">
+                                                <img src="${s.enrolledPhoto || s.avatar}" class="w-7 h-7 rounded-full object-cover border border-slate-700">
+                                                <span>${s.name} (${s.id})</span>
+                                            </td>
+                                            <td class="py-3 px-3 font-mono text-slate-400">${s.email}</td>
+                                            <td class="py-3 px-3 font-mono text-slate-300">${s.sgpa || '8.0'} / ${s.cgpa || '8.0'}</td>
+                                            <td class="py-3 px-3 font-bold ${s.attendance >= 75 ? 'text-emerald-400' : 'text-rose-400'}">${s.attendance}%</td>
+                                            <td class="py-3 px-3">
+                                                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${s.status === 'Present' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'}">
+                                                    ${s.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ADMIN USER DIRECTORY MODULE
+        function renderAdminUsersModule(container) {
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-users-gear text-indigo-400"></i> User Directory & Access Credentials
+                            </h2>
+                            <p class="text-xs text-slate-400">Manage student & faculty accounts, view created passwords, and enroll biometrics via live webcam</p>
+                        </div>
+                        <button onclick="openAddUserModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all shadow flex items-center space-x-2">
+                            <i class="fa-solid fa-user-plus"></i>
+                            <span>Enroll Account (Live Cam)</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden p-5">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                                        <th class="py-3 px-3">User</th>
+                                        <th class="py-3 px-3">Role</th>
+                                        <th class="py-3 px-3">ID / Roll No</th>
+                                        <th class="py-3 px-3">University Email</th>
+                                        <th class="py-3 px-3">Created Password</th>
+                                        <th class="py-3 px-3 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800/60">
+                                    ${appState.users.map(u => `
+                                        <tr>
+                                            <td class="py-3 px-3 font-semibold text-white flex items-center space-x-2">
+                                                <img src="${u.avatar}" class="w-7 h-7 rounded-full object-cover border border-slate-700">
+                                                <span>${u.name}</span>
+                                            </td>
+                                            <td class="py-3 px-3">
+                                                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${u.role === 'admin' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : u.role === 'faculty' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/30'}">
+                                                    ${u.role}
+                                                </span>
+                                            </td>
+                                            <td class="py-3 px-3 font-mono text-slate-300">${u.id}</td>
+                                            <td class="py-3 px-3 font-mono text-slate-400">${u.email}</td>
+                                            <td class="py-3 px-3">
+                                                <div class="flex items-center space-x-2">
+                                                    <input type="password" readonly value="${u.password}" id="pass_${u.id}" class="bg-slate-900 border border-slate-800 px-2 py-1 rounded text-xs text-indigo-300 font-mono w-24">
+                                                    <button onclick="togglePasswordVisibility('pass_${u.id}', this)" class="text-slate-500 hover:text-slate-300">
+                                                        <i class="fa-solid fa-eye text-xs"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td class="py-3 px-3 text-right">
+                                                <button onclick="deleteUser('${u.id}')" class="px-2.5 py-1 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 rounded-lg text-[10px] border border-rose-500/30">
+                                                    Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // FACULTY LIVE ATTENDANCE SESSION WITH MULTI-MODE ENGINES
+        function renderFacultyLiveSession(container) {
+            const students = appState.users.filter(u => u.role === 'student');
+            const activeStudent = students.find(s => s.id === appState.liveSession.selectedStudentId) || students[0];
+
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+                                Live Attendance Session (Python 01CT1309)
+                            </h2>
+                            <p class="text-xs text-slate-400">Select Mode: Dynamic 30s Student QR, AI Face Recognition, Manual Roster, or All Combined</p>
+                        </div>
+                        <button onclick="stopLiveSession(); switchTab('dashboard');" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-4 py-2 rounded-xl border border-slate-700 self-start lg:self-auto">
+                            Close Session
+                        </button>
+                    </div>
+
+                    <!-- MODE SELECTOR TABS -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-950 p-2 rounded-2xl border border-slate-800">
+                        <button onclick="setSessionMode('all')" class="py-2 px-3 text-xs font-bold rounded-xl transition-all ${appState.liveSession.activeMode === 'all' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">
+                            <i class="fa-solid fa-layer-group mr-1 text-amber-400"></i> All Modes
+                        </button>
+                        <button onclick="setSessionMode('qr')" class="py-2 px-3 text-xs font-bold rounded-xl transition-all ${appState.liveSession.activeMode === 'qr' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">
+                            <i class="fa-solid fa-qrcode mr-1 text-indigo-400"></i> Student 30s QR
+                        </button>
+                        <button onclick="setSessionMode('face')" class="py-2 px-3 text-xs font-bold rounded-xl transition-all ${appState.liveSession.activeMode === 'face' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">
+                            <i class="fa-solid fa-video mr-1 text-emerald-400"></i> Face Recognition
+                        </button>
+                        <button onclick="setSessionMode('manual')" class="py-2 px-3 text-xs font-bold rounded-xl transition-all ${appState.liveSession.activeMode === 'manual' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">
+                            <i class="fa-solid fa-user-check mr-1 text-sky-400"></i> Manual Roster
+                        </button>
+                    </div>
+
+                    <!-- RECENT VERIFICATION BANNER -->
+                    <div id="sessionVerificationBanner" class="${appState.liveSession.lastMarkedStudent ? 'block' : 'hidden'} bg-emerald-950/70 border border-emerald-500/50 p-4 rounded-2xl flex items-center justify-between text-emerald-200">
+                        <div class="flex items-center space-x-3">
+                            <img id="verifiedStudentAvatar" src="${appState.liveSession.lastMarkedStudent?.avatar || ''}" class="w-10 h-10 rounded-full border-2 border-emerald-400 object-cover">
+                            <div>
+                                <p class="text-xs font-extrabold text-white" id="verifiedStudentTitle">
+                                    Attendance Verified: ${appState.liveSession.lastMarkedStudent?.name || ''}
+                                </p>
+                                <p class="text-[11px] text-emerald-300" id="verifiedStudentSubtitle">
+                                    ID: ${appState.liveSession.lastMarkedStudent?.id || ''} • Status: Marked PRESENT
+                                </p>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 font-mono text-[10px] rounded-lg border border-emerald-400/40">
+                            CONFIRMED ✓
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- MODE A: STUDENT-SPECIFIC 30-SECOND DYNAMIC QR -->
+                        <div class="${(appState.liveSession.activeMode === 'qr' || appState.liveSession.activeMode === 'all') ? 'block' : 'hidden'} bg-slate-950 border border-slate-800 p-6 rounded-2xl flex flex-col items-center justify-center text-center space-y-4 relative">
+                            <div class="w-full flex justify-between items-center text-xs">
+                                <span class="font-bold text-white flex items-center gap-1.5">
+                                    <i class="fa-solid fa-qrcode text-indigo-400"></i> Student-Specific Dynamic QR
+                                </span>
+                                <span class="text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                                    <i class="fa-solid fa-rotate text-[10px] animate-spin"></i> 30s Auto-Rotate
+                                </span>
+                            </div>
+
+                            <!-- Student Selector -->
+                            <div class="w-full bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-left">
+                                <label class="block text-[11px] text-slate-400 mb-1 font-medium">Generate Dedicated QR for Student:</label>
+                                <select onchange="changeQrTargetStudent(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white font-semibold focus:outline-none focus:border-indigo-500">
+                                    ${students.map(s => `
+                                        <option value="${s.id}" ${s.id === activeStudent.id ? 'selected' : ''}>
+                                            ${s.name} (${s.id}) - Status: ${s.status}
+                                        </option>
+                                    `).join('')}
+                                </select>
+                            </div>
+
+                            <div class="p-4 bg-white rounded-2xl shadow-xl inline-block my-2">
+                                <div id="qrCodeContainer"></div>
+                            </div>
+
+                            <div class="space-y-1">
+                                <p class="text-[11px] text-slate-400">Generated for: <strong class="text-white font-semibold">${activeStudent.name}</strong></p>
+                                <div class="text-2xl font-extrabold text-indigo-400 font-mono" id="qrTimer">30s</div>
+                            </div>
+                        </div>
+
+                        <!-- MODE B: AI WEBCAM FACE RECOGNITION SCANNER -->
+                        <div class="${(appState.liveSession.activeMode === 'face' || appState.liveSession.activeMode === 'all') ? 'block' : 'hidden'} bg-slate-950 border border-slate-800 p-6 rounded-2xl flex flex-col items-center justify-center relative">
+                            <div class="w-full flex justify-between items-center mb-3">
+                                <span class="text-xs font-semibold text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-video text-emerald-400"></i> AI Face Scanner Engine
+                                </span>
+                                <span id="faceStatusBadge" class="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
+                                    Scanning Stream...
+                                </span>
+                            </div>
+
+                            <div class="relative w-full aspect-video bg-slate-900 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
+                                <video id="facultyWebcam" autoplay playsinline class="w-full h-full object-cover"></video>
+                                <div id="faceOverlayBox" class="absolute w-44 h-44 rounded-2xl face-box flex flex-col justify-between p-2 pointer-events-none">
+                                    <div class="flex justify-between text-[10px] text-emerald-400 font-mono">
+                                        <span>MATCHING...</span>
+                                        <span id="matchConfidence">98.4%</span>
+                                    </div>
+                                    <div class="text-center">
+                                        <p id="matchedStudentName" class="text-xs font-bold text-white bg-slate-950/80 px-2 py-1 rounded">Scanning Faces...</p>
+                                    </div>
+                                </div>
+                                <div class="absolute inset-x-0 h-0.5 bg-emerald-400 shadow-[0_0_15px_#10b981] scan-line pointer-events-none"></div>
+                            </div>
+
+                            <div class="w-full mt-4 flex justify-between items-center text-xs">
+                                <button onclick="triggerManualFaceMatch()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-3 py-1.5 rounded-xl transition-all shadow">
+                                    Simulate Face Match Recognition
+                                </button>
+                                <span class="text-slate-500 text-[11px]">Auto-displays student name</span>
+                            </div>
+                        </div>
+
+                        <!-- MODE C: MANUAL ATTENDANCE ROSTER -->
+                        <div class="${(appState.liveSession.activeMode === 'manual' || appState.liveSession.activeMode === 'all') ? 'block' : 'hidden'} lg:col-span-2 bg-slate-950 border border-slate-800 p-5 rounded-2xl space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                                <div>
+                                    <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                        <i class="fa-solid fa-user-check text-sky-400"></i> Manual Class Roster Toggle
+                                    </h3>
+                                    <p class="text-[11px] text-slate-400">Mark Present or Absent directly for enrolled students</p>
+                                </div>
+                                <button onclick="markAllPresent()" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 font-medium">
+                                    Mark All Present
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                ${students.map(s => `
+                                    <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between">
+                                        <div class="flex items-center space-x-2.5">
+                                            <img src="${s.enrolledPhoto || s.avatar}" class="w-8 h-8 rounded-full object-cover border border-slate-700">
+                                            <div>
+                                                <p class="text-xs font-bold text-white">${s.name}</p>
+                                                <p class="text-[10px] text-slate-400 font-mono">${s.id}</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex space-x-1">
+                                            <button onclick="setStudentStatus('${s.id}', 'Present')" class="px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all ${s.status === 'Present' ? 'bg-emerald-600 text-white shadow' : 'bg-slate-800 text-slate-400 hover:text-white'}">
+                                                Present
+                                            </button>
+                                            <button onclick="setStudentStatus('${s.id}', 'Absent')" class="px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all ${s.status === 'Absent' ? 'bg-rose-600 text-white shadow' : 'bg-slate-800 text-slate-400 hover:text-white'}">
+                                                Absent
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            startFacultyLiveEngine();
+        }
+
+        function setSessionMode(mode) {
+            appState.liveSession.activeMode = mode;
+            renderFacultyLiveSession(document.getElementById('mainContent'));
+        }
+
+        function changeQrTargetStudent(studentId) {
+            appState.liveSession.selectedStudentId = studentId;
+            updateDynamicQr();
+            renderFacultyLiveSession(document.getElementById('mainContent'));
+        }
+
+        function setStudentStatus(studentId, status) {
+            const student = appState.users.find(u => u.id === studentId);
+            if(student) {
+                student.status = status;
+                appState.liveSession.lastMarkedStudent = student;
+                showToast(`Status set to ${status} for ${student.name}`, 'info');
+                renderFacultyLiveSession(document.getElementById('mainContent'));
+            }
+        }
+
+        function markAllPresent() {
+            appState.users.filter(u => u.role === 'student').forEach(s => s.status = 'Present');
+            showToast('All students marked Present', 'success');
+            renderFacultyLiveSession(document.getElementById('mainContent'));
+        }
+
+        function startFacultyLiveEngine() {
+            updateDynamicQr();
+            appState.liveSession.timer = 30;
+            if(appState.liveSession.intervalId) clearInterval(appState.liveSession.intervalId);
+            
+            appState.liveSession.intervalId = setInterval(() => {
+                appState.liveSession.timer--;
+                const timerEl = document.getElementById('qrTimer');
+                if(timerEl) timerEl.innerText = `${appState.liveSession.timer}s`;
+
+                if(appState.liveSession.timer <= 0) {
+                    appState.liveSession.timer = 30;
+                    updateDynamicQr();
+                }
+            }, 1000);
+
+            const video = document.getElementById('facultyWebcam');
+            if(video && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(stream => {
+                        appState.liveSession.webcamStream = stream;
+                        video.srcObject = stream;
+                    })
+                    .catch(err => {
+                        showToast('Camera simulation mode active', 'info');
+                    });
+            }
+        }
+
+        function updateDynamicQr() {
+            const qrContainer = document.getElementById('qrCodeContainer');
+            if(!qrContainer) return;
+            qrContainer.innerHTML = '';
+
+            const student = appState.users.find(u => u.id === appState.liveSession.selectedStudentId) || appState.users[2];
+            appState.liveSession.token = `MU_PYTHON_STU_${student.id}_${Date.now()}`;
+
+            new QRCode(qrContainer, {
+                text: appState.liveSession.token,
+                width: 140,
+                height: 140,
+                colorDark : "#0f172a",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        }
+
+        function stopLiveSession() {
+            if(appState.liveSession.intervalId) {
+                clearInterval(appState.liveSession.intervalId);
+                appState.liveSession.intervalId = null;
+            }
+            if(appState.liveSession.webcamStream) {
+                appState.liveSession.webcamStream.getTracks().forEach(track => track.stop());
+                appState.liveSession.webcamStream = null;
+            }
+        }
+
+        function triggerManualFaceMatch() {
+            const students = appState.users.filter(u => u.role === 'student');
+            const randomStudent = students[Math.floor(Math.random() * students.length)];
+            if(randomStudent) {
+                randomStudent.status = 'Present';
+                appState.liveSession.lastMarkedStudent = randomStudent;
+
+                const box = document.getElementById('faceOverlayBox');
+                const nameLabel = document.getElementById('matchedStudentName');
+                const badge = document.getElementById('faceStatusBadge');
+
+                if(box) box.classList.add('matched');
+                if(nameLabel) nameLabel.innerText = `Matched: ${randomStudent.name}`;
+                if(badge) {
+                    badge.innerText = `Verified: ${randomStudent.name}`;
+                    badge.className = 'text-[10px] font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-md border border-emerald-400/20';
+                }
+
+                showToast(`Face Matched: ${randomStudent.name} marked Present!`, 'success');
+                renderFacultyLiveSession(document.getElementById('mainContent'));
+            }
+        }
+
+        // TIMETABLE MODULE
+        function renderTimetableModule(container) {
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-days text-indigo-400"></i> Timetable & Lecture Schedule
+                        </h2>
+                        <p class="text-xs text-slate-400">Division 3EK1 • Weekly Class Slots & Lab Venues</p>
+                    </div>
+
+                    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                                        <th class="py-3 px-3">Day</th>
+                                        <th class="py-3 px-3">Timing</th>
+                                        <th class="py-3 px-3">Subject Name</th>
+                                        <th class="py-3 px-3">Faculty</th>
+                                        <th class="py-3 px-3">Venue</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800/60">
+                                    ${appState.timetable.map(t => `
+                                        <tr>
+                                            <td class="py-3 px-3 font-bold text-indigo-400">${t.day}</td>
+                                            <td class="py-3 px-3 font-mono text-slate-300">${t.time}</td>
+                                            <td class="py-3 px-3 font-semibold text-white">${t.subject}</td>
+                                            <td class="py-3 px-3 text-slate-400">${t.faculty}</td>
+                                            <td class="py-3 px-3 font-mono text-emerald-400">${t.room}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ASSIGNMENTS MODULE
+        function renderAssignmentsModule(container) {
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-file-code text-indigo-400"></i> Assignment Submission Portal
+                        </h2>
+                        <p class="text-xs text-slate-400">Submit Python coursework and track evaluation status</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        ${appState.assignments.map(a => `
+                            <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                <div class="space-y-1">
+                                    <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-wide">${a.subject}</span>
+                                    <h3 class="text-sm font-bold text-white">${a.title}</h3>
+                                    <p class="text-xs text-slate-400">Due Date: <span class="text-amber-400 font-mono">${a.dueDate}</span></p>
+                                </div>
+                                <div>
+                                    ${a.status === 'Submitted' ? `
+                                        <span class="px-3 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold">
+                                            ✓ Submitted (${a.file})
+                                        </span>
+                                    ` : `
+                                        <button onclick="submitAssignment(${a.id})" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow">
+                                            Upload Submission File
+                                        </button>
+                                    `}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function submitAssignment(id) {
+            const assign = appState.assignments.find(a => a.id === id);
+            if(assign) {
+                assign.status = 'Submitted';
+                assign.file = 'solution_code.py';
+                showToast(`Assignment '${assign.title}' submitted!`, 'success');
+                renderAssignmentsModule(document.getElementById('mainContent'));
+            }
+        }
+
+        // RESULTS & TRANSCRIPT MODULE
+        function renderStudentResultsModule(container) {
+            const student = appState.currentUser;
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-graduation-cap text-indigo-400"></i> Academic Results & Transcript
+                        </h2>
+                        <p class="text-xs text-slate-400">Semester Grade Record, SGPA/CGPA, and Backlog Counts</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl text-center space-y-1">
+                            <p class="text-xs text-slate-400">Current SGPA</p>
+                            <p class="text-3xl font-extrabold text-indigo-400">${student.sgpa || '8.92'}</p>
+                        </div>
+                        <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl text-center space-y-1">
+                            <p class="text-xs text-slate-400">Cumulative CGPA</p>
+                            <p class="text-3xl font-extrabold text-emerald-400">${student.cgpa || '8.75'}</p>
+                        </div>
+                        <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl text-center space-y-1">
+                            <p class="text-xs text-slate-400">Active Backlogs</p>
+                            <p class="text-3xl font-extrabold ${student.backlogs > 0 ? 'text-amber-400' : 'text-slate-200'}">${student.backlogs || 0}</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-3">
+                        <h3 class="text-xs font-bold text-white uppercase tracking-wider">Semester Course Grades</h3>
+                        <div class="space-y-2 text-xs">
+                            <div class="bg-slate-900 p-3 rounded-xl flex justify-between items-center">
+                                <div>
+                                    <p class="font-bold text-white">Programming with Python (01CT1309)</p>
+                                    <p class="text-[10px] text-slate-400">Credits: 4</p>
+                                </div>
+                                <span class="font-mono text-emerald-400 font-bold">Grade: AA (10.0)</span>
+                            </div>
+                            <div class="bg-slate-900 p-3 rounded-xl flex justify-between items-center">
+                                <div>
+                                    <p class="font-bold text-white">Data Structures & Algorithms</p>
+                                    <p class="text-[10px] text-slate-400">Credits: 4</p>
+                                </div>
+                                <span class="font-mono text-indigo-400 font-bold">Grade: AB (9.0)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // FACULTY GRADE ENTRY MODULE
+        function renderFacultyAcademicMgmtModule(container) {
+            const students = appState.users.filter(u => u.role === 'student');
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-pen-to-square text-emerald-400"></i> Performance & Result Entry Publisher
+                        </h2>
+                        <p class="text-xs text-slate-400">Specify SGPA, CGPA, and Active Backlogs per student</p>
+                    </div>
+
+                    <div class="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden p-5">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                                        <th class="py-3 px-3">Student</th>
+                                        <th class="py-3 px-3">SGPA</th>
+                                        <th class="py-3 px-3">CGPA</th>
+                                        <th class="py-3 px-3">Backlogs</th>
+                                        <th class="py-3 px-3 text-right">Save Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800/60">
+                                    ${students.map(s => `
+                                        <tr>
+                                            <td class="py-3 px-3 font-bold text-white">${s.name} (${s.id})</td>
+                                            <td class="py-3 px-3">
+                                                <input type="number" step="0.01" id="sgpa_${s.id}" value="${s.sgpa || 8.0}" class="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-indigo-300 font-mono w-20">
+                                            </td>
+                                            <td class="py-3 px-3">
+                                                <input type="number" step="0.01" id="cgpa_${s.id}" value="${s.cgpa || 8.0}" class="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-emerald-300 font-mono w-20">
+                                            </td>
+                                            <td class="py-3 px-3">
+                                                <input type="number" id="backlogs_${s.id}" value="${s.backlogs || 0}" class="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-amber-300 font-mono w-16">
+                                            </td>
+                                            <td class="py-3 px-3 text-right">
+                                                <button onclick="saveStudentAcademicData('${s.id}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-semibold">
+                                                    Update Grade
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function saveStudentAcademicData(studentId) {
+            const student = appState.users.find(u => u.id === studentId);
+            if(student) {
+                student.sgpa = parseFloat(document.getElementById(`sgpa_${studentId}`).value);
+                student.cgpa = parseFloat(document.getElementById(`cgpa_${studentId}`).value);
+                student.backlogs = parseInt(document.getElementById(`backlogs_${studentId}`).value);
+                showToast(`Grades updated for ${student.name}!`, 'success');
+            }
+        }
+
+        // HOLIDAYS & EVENTS MODULE
+        function renderHolidaysEventsModule(container) {
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-check text-indigo-400"></i> Holidays & Events Calendar
+                        </h2>
+                        <p class="text-xs text-slate-400">University Schedule & Mid-Term Exam Timelines</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Holidays -->
+                        <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl space-y-3">
+                            <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-umbrella-beach"></i> Official Holidays
+                            </h3>
+                            <div class="space-y-2">
+                                ${appState.holidays.map(h => `
+                                    <div class="bg-slate-900 p-3 rounded-xl flex justify-between items-center text-xs">
+                                        <div>
+                                            <p class="font-bold text-white">${h.title}</p>
+                                            <p class="text-[10px] text-slate-400">${h.type}</p>
+                                        </div>
+                                        <span class="font-mono text-indigo-300 font-semibold">${h.date}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Campus Events -->
+                        <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl space-y-3">
+                            <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-bullhorn"></i> Upcoming Exams & Events
+                            </h3>
+                            <div class="space-y-2">
+                                ${appState.events.map(e => `
+                                    <div class="bg-slate-900 p-3 rounded-xl flex justify-between items-center text-xs">
+                                        <div>
+                                            <p class="font-bold text-white">${e.title}</p>
+                                            <p class="text-[10px] text-slate-400">Venue: ${e.room}</p>
+                                        </div>
+                                        <span class="font-mono text-emerald-300 font-semibold">${e.date}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // STUDENT QR SCANNER SCANNER VIEW
+        function renderStudentQRScanner(container) {
+            container.innerHTML = `
+                <div class="max-w-md mx-auto space-y-5">
+                    <div class="text-center space-y-1">
+                        <h2 class="text-lg font-bold text-white">Scan Faculty 30s QR</h2>
+                        <p class="text-xs text-slate-400">Align the dynamic rotating QR within the reader window</p>
+                    </div>
+
+                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-4">
+                        <div id="studentReader" class="w-full rounded-xl overflow-hidden bg-slate-900 border border-slate-800"></div>
+                        <button onclick="markCurrentStudentPresent()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2.5 rounded-xl transition-all shadow-md">
+                            Simulate Instant Successful Scan
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            setTimeout(() => {
+                const html5QrcodeScanner = new Html5QrcodeScanner("studentReader", { fps: 10, qrbox: 200 });
+                html5QrcodeScanner.render((decodedText, decodedResult) => {
+                    html5QrcodeScanner.clear();
+                    markCurrentStudentPresent();
+                }, (errorMessage) => {});
+            }, 300);
+        }
+
+        function markCurrentStudentPresent() {
+            appState.currentUser.status = 'Present';
+            showToast(`Attendance marked Present for ${appState.currentUser.name}`, 'success');
+            switchTab('dashboard');
+        }
+
+        // ADMIN ANALYTICS
+        function renderAdminDashboard(container) {
+            const students = appState.users.filter(u => u.role === 'student');
+
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div class="bg-gradient-to-r from-amber-950/30 via-slate-900 to-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <span class="text-xs font-semibold text-amber-400 uppercase tracking-wide">Administrator Console</span>
+                            <h2 class="text-xl font-bold text-white mt-1">Institutional Consolidated Analytics</h2>
+                        </div>
+                        <button onclick="switchTab('alerts')" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all shadow-md shadow-rose-600/30 flex items-center space-x-2">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span>View Low-Attendance Defaulters</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-slate-950 border border-slate-800 p-5 rounded-2xl">
+                            <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">Student Attendance Percentage Breakdown</h3>
+                            <canvas id="adminChart" class="w-full h-56"></canvas>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl">
+                                <p class="text-xs text-slate-400">Total System Accounts</p>
+                                <p class="text-2xl font-bold text-white mt-1">${appState.users.length} Enrolled</p>
+                            </div>
+                            <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl">
+                                <p class="text-xs text-slate-400">Defaulters (<75%)</p>
+                                <p class="text-2xl font-bold text-rose-400 mt-1">${students.filter(s => s.attendance < 75).length} Students</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            setTimeout(() => {
+                const ctx = document.getElementById('adminChart');
+                if(ctx) {
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: students.map(s => s.name.split(' ')[1] || s.name),
+                            datasets: [{
+                                label: 'Attendance %',
+                                data: students.map(s => s.attendance || 0),
+                                backgroundColor: students.map(s => (s.attendance || 0) >= 75 ? 'rgba(16, 185, 129, 0.7)' : 'rgba(244, 63, 94, 0.7)'),
+                                borderRadius: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: { y: { beginAtZero: true, max: 100 } }
+                        }
+                    });
+                }
+            }, 200);
+        }
+
+        function renderAdminAlertsModule(container) {
+            const defaulters = appState.users.filter(u => u.role === 'student' && u.attendance < 75);
+
+            container.innerHTML = `
+                <div class="space-y-5">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-rose-400"></i>
+                            Attendance Defaulter Alerts (< 75%)
+                        </h2>
+                        <p class="text-xs text-slate-400">Notifications dispatched to student university email & coordinator logs</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        ${defaulters.map(d => `
+                            <div class="bg-slate-950 border border-rose-900/60 p-4 rounded-2xl flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <img src="${d.avatar}" class="w-10 h-10 rounded-full object-cover border border-rose-500">
+                                    <div>
+                                        <p class="text-xs font-bold text-white">${d.name}</p>
+                                        <p class="text-[10px] text-slate-400">ID: ${d.id} • Email: ${d.email}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-lg font-extrabold text-rose-400">${d.attendance}%</span>
+                                    <p class="text-[10px] text-rose-400">Automated Alert Dispatched</p>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // CURRICULUM MODULE
+        function renderCurriculumModule(container) {
+            const isFacultyOrAdmin = appState.currentUser.role !== 'student';
+            container.innerHTML = `
+                <div class="space-y-5">
+                    <h2 class="text-lg font-bold text-white">Curriculum & Unit Progress</h2>
+                    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-4">
+                        ${appState.curriculum.map(item => `
+                            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${item.completed ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-500'}">
+                                        ${item.id}
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-semibold text-white">${item.topic}</p>
+                                        <p class="text-[10px] text-slate-400">Completion Date: ${item.date}</p>
+                                    </div>
+                                </div>
+                                ${isFacultyOrAdmin ? `
+                                    <button onclick="toggleCurriculumTopic(${item.id})" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${item.completed ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}">
+                                        ${item.completed ? 'Completed ✓' : 'Mark Complete'}
+                                    </button>
+                                ` : `
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${item.completed ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}">
+                                        ${item.completed ? 'Completed' : 'Pending'}
+                                    </span>
+                                `}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleCurriculumTopic(id) {
+            const item = appState.curriculum.find(c => c.id === id);
+            if(item) {
+                item.completed = !item.completed;
+                item.date = item.completed ? new Date().toISOString().split('T')[0] : 'Pending';
+                renderCurriculumModule(document.getElementById('mainContent'));
+                showToast(`Curriculum topic status updated`, 'info');
+            }
+        }
+
+        // ACTIVITIES MODULE
+        function renderActivitiesModule(container) {
+            const isStudent = appState.currentUser.role === 'student';
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <h2 class="text-lg font-bold text-white">Academic & Co-Curricular Activity Log</h2>
+                    ${isStudent ? `
+                        <div class="bg-slate-950 border border-slate-800 p-5 rounded-2xl space-y-4">
+                            <h3 class="text-xs font-bold text-white uppercase tracking-wider">Log Activity Record</h3>
+                            <form onsubmit="handleActivitySubmit(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <input type="text" id="actTitle" placeholder="Event / Activity Name" required class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                                <select id="actCategory" class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                                    <option value="Academic">Academic</option>
+                                    <option value="Co-Curricular">Co-Curricular</option>
+                                </select>
+                                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs py-2 rounded-xl shadow">Log Activity</button>
+                            </form>
+                        </div>
+                    ` : ''}
+
+                    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-3">
+                        <h3 class="text-xs font-bold text-slate-300 uppercase">Registered Records</h3>
+                        ${appState.activities.map(act => `
+                            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between">
+                                <div>
+                                    <p class="text-xs font-bold text-white">${act.title}</p>
+                                    <p class="text-[10px] text-slate-400">By: ${act.studentName} • ${act.category} • ${act.date}</p>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${act.status === 'Approved' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'}">
+                                    ${act.status}
+                                </span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleActivitySubmit(e) {
+            e.preventDefault();
+            const title = document.getElementById('actTitle').value;
+            const category = document.getElementById('actCategory').value;
+
+            appState.activities.unshift({
+                id: Date.now(),
+                studentId: appState.currentUser.id,
+                studentName: appState.currentUser.name,
+                title: title,
+                category: category,
+                date: new Date().toISOString().split('T')[0],
+                status: 'Approved'
+            });
+
+            showToast('Activity record logged', 'success');
+            renderActivitiesModule(document.getElementById('mainContent'));
+        }
+
+        // --- TOAST NOTIFICATIONS ---
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+
+            const colors = {
+                success: 'bg-emerald-950 border-emerald-700 text-emerald-200',
+                error: 'bg-rose-950 border-rose-700 text-rose-200',
+                info: 'bg-slate-900 border-slate-700 text-slate-200'
+            };
+
+            toast.className = `px-4 py-2.5 rounded-xl border text-xs font-medium shadow-xl transition-all duration-300 pointer-events-auto transform translate-y-2 opacity-0 ${colors[type]}`;
+            toast.innerText = msg;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
